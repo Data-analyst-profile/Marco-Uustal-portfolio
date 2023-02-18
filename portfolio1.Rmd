@@ -1,0 +1,68 @@
+---
+title: 'Data Visualizations with GGPLOT in R'
+output: html_document
+date: "2023-01-29"
+---
+```{r Loading Data Files}
+religion_data = read.csv("religion-survey-results.csv")
+library(tidyverse)
+comfort= religion_data$How.comfortable.would.you.be.seeing.someone.who.practices.a.different.religion.from.you..Ask.you.about.your.religion..unprompted..in.conversation
+
+religion_data = mutate(religion_data, comfort= fct_recode(comfort, "No response" = ""))
+religion_data = mutate(religion_data, comfort= fct_relevel(comfort, "Extremely comfortable", "Very comfortable", "Somewhat comfortably", "Not so comfortable", "Not at all comfortable", "No response"))
+```
+
+
+
+```{r First Exercise: Bar Chart}
+ggplot(religion_data)+ geom_bar(aes(x=comfort, fill= comfort, y = after_stat(count)/sum(after_stat(count)))) + scale_fill_brewer(palette= "Spectral", direction = -1) + labs(title= "Comfort When Asked About Religous Beliefs", y= "Proportion", x = "Comfort Level", fill= "Comfort Level") + scale_x_discrete(labels=NULL, breaks=NULL) + scale_y_continuous(expand=c(0,0)) + theme_classic()
+
+```
+
+
+
+```{r Exercise 2: Flipped Bar Graph}
+chosen_religion = religion_data$What.is.your.present.religion..if.any.
+ggplot(religion_data) + geom_bar(aes(y=chosen_religion, x = after_stat(count)/sum(after_stat(count)), fill = comfort)) +
+labs(x= "Proportion", y = "Comfort Level", fill = "Comfort Level", title = "Comfort When Asked About Religous Beliefs\nby Religous Identification") + scale_fill_brewer(palette= "Spectral", direction = -1) + theme_classic()
+```
+```{r graph 3}
+ggplot(religion_data) + geom_bar(aes(y=chosen_religion, fill = comfort), position = "fill") +
+labs(x= "Proportion", y = "Comfort Level", fill = "Comfort Level", title = "Comfort When Asked About Religous Beliefs\nby Religous Identification") + scale_fill_brewer(palette= "Spectral", direction = -1) + theme_classic()
+```
+
+
+```{r 4th Graph}
+
+# creating variables
+chosen_religion = religion_data$What.is.your.present.religion..if.any.
+comfort_unprompt_ask =religion_data$How.comfortable.would.you.be.seeing.someone.who.practices.a.different.religion.from.you..Ask.you.about.your.religion..unprompted..in.conversation
+comfort_bring_up = religion_data$How.comfortable.would.you.be.seeing.someone.who.practices.a.different.religion.from.you..Bring.up.his.or.her.own.religion..unprompted..in.conversation
+
+# changing class of response to factor class
+religion_data= mutate(religion_data,comfort_unprompt_ask = as.factor(comfort_unprompt_ask))
+
+religion_data= mutate(religion_data, comfort_bring_up = as.factor(comfort_bring_up))
+
+
+# filtering variables for atheists
+atheists= filter(religion_data, chosen_religion == "Atheist" & comfort_bring_up!= "" & comfort_unprompt_ask != "")
+
+comfort_unprompt_ask_atheists=atheists$How.comfortable.would.you.be.seeing.someone.who.practices.a.different.religion.from.you..Ask.you.about.your.religion..unprompted..in.conversation
+
+comfort_bring_up_atheists = atheists$How.comfortable.would.you.be.seeing.someone.who.practices.a.different.religion.from.you..Bring.up.his.or.her.own.religion..unprompted..in.conversation
+
+# releveling the data
+atheists= mutate(atheists,comfort_unprompt_ask_atheists = fct_relevel(comfort_unprompt_ask_atheists, "Not at all comfortable", "Not so comfortable", "Somewhat comfortably", "Very comfortable", "Extremely comfortable"))
+
+atheists= mutate(atheists,comfort_bring_up_atheists = fct_relevel(comfort_bring_up_atheists, "Extremely comfortable", "Very comfortable","Somewhat comfortably", "Not so comfortable", "Not at all comfortable"))
+
+
+
+
+ggplot(atheists) + geom_bar(aes(y=comfort_unprompt_ask_atheists, fill = comfort_bring_up_atheists), position = "fill") + scale_fill_brewer(palette ="RdYlBu", direction =-1) + labs(title = "How Comfortable are Atheists \nWhen Others Bring Up Religous Beliefs", subtitle = "(Comfort with others discussing their religion \n conditional on comfort with being asked", y= "Comfort When Asked About Your Own Religion", x = "Proportion", fill = "Comfort when Other Bring Up \nTheir Religion \n(Unprompted)")
+
+
+
+```
+
