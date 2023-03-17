@@ -1,0 +1,55 @@
+---
+title: "Interactive Shiny Graphs using US Crime Data"
+output: html_document
+runtime: shiny
+---
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(wesanderson)
+library(shiny)
+library(rsconnect)
+library(maps)
+library(mapproj)
+crimeStatebyState <- read.csv("crimeStatebyState (1).csv")
+crimeStatebyState$State = tolower(crimeStatebyState$State)
+all_states = map_data("state")
+names(all_states)[5] = "State"
+
+inputPanel(
+  
+  selectInput("YVar","Pick a Y Variable: Per capita crime rate", c("Aggravated.assault.rate", "Burglary.rate", "Property.crime.rate", "Murder.and.nonnegligent.manslaughter.rate"), selected = "Aggravated.assault.rate"),
+  selectInput("ChosenStates","Pick a State", choices = c("Alabama", "Florida", "Texas", "Louisiana", "Mississippi", "Georgia", "South Carolina", "North Carolina", "Virginia", "West Virginia", "Kentucky", "Arkansas", "Oklahoma", "Tennessee", "Maryland", "Delaware", "District of Columbia"), multiple=T, selected = c("Florida", "Louisiana")),
+  
+)
+
+renderPlot({
+  
+filtered_data = filter(crimeStatebyState, State %in% tolower(input$ChosenStates))
+
+   ggplot(filtered_data) + geom_line(aes(x=Year, y = eval(as.name(input$YVar)), color = State)) + labs(y = "Crime Rate per 100,000 Residents", title = "Crime Rates in Southern States") + theme_classic() 
+  
+
+
+})
+
+```
+
+```{r, echo = FALSE }
+inputPanel(
+  selectInput("XVar","Pick the Data you would like to display: Per capita crime rate", c("Aggravated.assault.rate", "Burglary.rate", "Property.crime.rate", "Murder.and.nonnegligent.manslaughter.rate"), selected = "Aggravated.assault.rate"),
+  textInput("year", "Please pick a year from 1960 to 2014 for the Chloropleth", value = 2010, placeholder = 2010)
+)
+
+renderPlot({
+  
+  crime_geo = filter(crimeStatebyState, Year == input$year)
+  crime_geo = full_join(crime_geo, all_states, by = "State", multiple = "all")
+
+    ggplot() + geom_polygon(data = crime_geo, aes(x = long, y =lat, group = group, fill = eval(as.name(input$XVar))), color = "grey40") + coord_map() +  labs( x = "", y = "", title = "Heat Map of the Crime Rate across US States")+ scale_fill_gradient(name = "Heat Scale for Crime Rate", low = "whitesmoke", high = "darkred") + theme_classic() + theme(axis.ticks.x= element_blank(), axis.ticks.y = element_blank(), axis.text = element_blank())
+
+    ##scale_fill_gradientn(name = "Heat Scale for Crime Rate", colors=wes_palette("Moonrise1", type = "continuous"))
+    ##+ annotate(geom="text",x=xcenter,y=ycenter, label=input$year,size=50,color="grey90")
+})
+
+```
